@@ -3,9 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CubeBase.h"
 #include "TetrisDataAsset.h"
 #include "GameFramework/Actor.h"
 #include "TetrisPieceBase.generated.h"
+
+UENUM(BlueprintType)
+enum ETetrisMoveDir { X_Forward, X_Backward, Y_Forward, Y_Backward, Down };
+
+UENUM(BlueprintType)
+enum ETetrisRotateDir { X_Clockwise, X_Counterclockwise, Y_Clockwise, Y_Counterclockwise, Z_Clockwise, Z_Counterclockwise };
 
 USTRUCT(BlueprintType)
 struct FCubeStruct
@@ -13,9 +20,9 @@ struct FCubeStruct
 	GENERATED_BODY()
 
 	UPROPERTY()
-	UStaticMeshComponent* CubeMesh;
+	ACubeBase* Cube;
 	UPROPERTY()
-	FTetrisCoordinate CubeCoordinates;
+	FTetrisCoordinate CubeRelativeCoordinates;
 };
 
 UCLASS()
@@ -38,9 +45,25 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdatePiecesWorldPosition();
 
+	// Move function
+	UFUNCTION(BlueprintCallable)
+	void TetrisMove(ETetrisMoveDir n_Dir);
+
+	// Rotate function
+	UFUNCTION(BlueprintCallable)
+	void TetrisRotate(ETetrisRotateDir n_Rot);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	// Rotate unit
+	UFUNCTION(BlueprintCallable)
+	FTetrisCoordinate TetrisCubeRotate_X(bool isClockwise, FTetrisCoordinate i_OldCoordinate);
+	UFUNCTION(BlueprintCallable)
+	FTetrisCoordinate TetrisCubeRotate_Y(bool isClockwise, FTetrisCoordinate i_OldCoordinate);
+	UFUNCTION(BlueprintCallable)
+	FTetrisCoordinate TetrisCubeRotate_Z(bool isClockwise, FTetrisCoordinate i_OldCoordinate);
 
 public:
 	// UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)

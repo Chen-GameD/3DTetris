@@ -40,17 +40,18 @@ void ATetrisPieceBase::InitPiece(TArray<FTetrisCoordinate> i_PiecesCoordinates, 
 		// Init all pieces
 		for (int i = 0; i < i_PiecesCoordinates.Num(); i++)
 		{
-			UStaticMeshComponent* NewCubeComponent = NewObject<UStaticMeshComponent>(this, UStaticMeshComponent::StaticClass());
-			// Set the static mesh for the component
-			NewCubeComponent->SetStaticMesh(i_CubeMesh);
-			NewCubeComponent->SetupAttachment(RootMesh);
+			// New a cube and attach to RootMesh component
+			ACubeBase* NewCube = GetWorld()->SpawnActor<ACubeBase>(ACubeBase::StaticClass(), FVector(0, 0, 0), FRotator::ZeroRotator);
+			NewCube->InitCube(i_CubeMesh);
+			NewCube->AttachToComponent(RootMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
 
-			//UStaticMesh* NewCube = GetWorld()->SpawnActor<UStaticMesh>(i_CubeMesh->GetClass(), )
-			
-			FTetrisCoordinate NewCubeCoordinate = i_PiecesCoordinates[i];
+			// Calculate relative coordinate of this cube
+			FTetrisCoordinate NewCubeRelativeCoordinate = i_PiecesCoordinates[i];
 			FCubeStruct NewCubeStruct;
-			NewCubeStruct.CubeMesh = NewCubeComponent;
-			NewCubeStruct.CubeCoordinates = NewCubeCoordinate;
+			NewCubeStruct.Cube = NewCube;
+			NewCubeStruct.CubeRelativeCoordinates = NewCubeRelativeCoordinate;
+			
+			// Add new cube to the array
 			Cubes.Add(NewCubeStruct);
 		}
 
@@ -61,7 +62,7 @@ void ATetrisPieceBase::InitPiece(TArray<FTetrisCoordinate> i_PiecesCoordinates, 
 		IsFinishedInit = true;
 
 		// When finished Init, should update all pieces world position once
-		//UpdatePiecesWorldPosition();
+		UpdatePiecesWorldPosition();
 	}
 	else
 	{
@@ -78,14 +79,182 @@ void ATetrisPieceBase::UpdatePiecesWorldPosition()
 		{
 			// Cubes[i]'s world coordinate = BaseCoordinate + Cubes[i].CubeCoordinates
 			FTetrisCoordinate CurrentCubeWorldCoordinate;
-			CurrentCubeWorldCoordinate.x = BaseCoordinate.x + Cubes[i].CubeCoordinates.x;
-			CurrentCubeWorldCoordinate.y = BaseCoordinate.y + Cubes[i].CubeCoordinates.y;
-			CurrentCubeWorldCoordinate.z = BaseCoordinate.z + Cubes[i].CubeCoordinates.z;
+			CurrentCubeWorldCoordinate.x = BaseCoordinate.x + Cubes[i].CubeRelativeCoordinates.x;
+			CurrentCubeWorldCoordinate.y = BaseCoordinate.y + Cubes[i].CubeRelativeCoordinates.y;
+			CurrentCubeWorldCoordinate.z = BaseCoordinate.z + Cubes[i].CubeRelativeCoordinates.z;
+			
+			Cubes[i].Cube->CubeWorldCoordinate = CurrentCubeWorldCoordinate;
 
 			// Calculate the real world location
 			FVector CurrentCubeWorldLocation = FVector(CurrentCubeWorldCoordinate.x * CubeRef_X, CurrentCubeWorldCoordinate.y * CubeRef_Y, CurrentCubeWorldCoordinate.z * CubeRef_Z);
-			Cubes[i].CubeMesh->SetWorldLocation(CurrentCubeWorldLocation);
+			Cubes[i].Cube->SetActorLocation(CurrentCubeWorldLocation);
 		}
 	}
+}
+
+void ATetrisPieceBase::TetrisMove(ETetrisMoveDir n_Dir)
+{
+	switch (n_Dir)
+	{
+	case ETetrisMoveDir::X_Forward:
+		BaseCoordinate.x++;
+		break;
+	case ETetrisMoveDir::X_Backward:
+		BaseCoordinate.x--;
+		break;
+	case ETetrisMoveDir::Y_Forward:
+		BaseCoordinate.y++;
+		break;
+	case ETetrisMoveDir::Y_Backward:
+		BaseCoordinate.y--;
+		break;
+	case ETetrisMoveDir::Down:
+		BaseCoordinate.z--;
+		break;
+		default:
+			break;
+	}
+
+	// Update world position
+	UpdatePiecesWorldPosition();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+/// Here I need to apply the relevant knowledge of rotation matrix in linear algebra.
+/// Suppose the rotation angle is A:
+/// //////////////////////////////////////////////////////////////////////////////////
+/// If rotate along X-axis:
+/// new_x = old_x;
+/// new_y = old_y * cosA + old_z * sinA;
+/// new_z = -(old_y * sinA) + old_z * cosA;
+///========================================================
+/// If rotate along Y-axis:
+/// new_x = old_x * cosA - old_z * sinA;
+/// new_y = old_y;
+/// new_z = old_x * sinA + old_z * cosA;
+///=========================================================
+/// If rotate along Z_axis:
+/// new_x = old_x * cosA + old_y * sinA;
+/// new_y = -(old_x * sinA) + old_y * cosA;
+/// new_z = old_z;
+/////////////////////////////////////////////////////////////////////////////////////
+void ATetrisPieceBase::TetrisRotate(ETetrisRotateDir n_Rot)
+{
+	switch (n_Rot)
+	{
+	case ETetrisRotateDir::X_Clockwise:
+		for (int i = 0; i < Cubes.Num(); i++)
+		{
+			Cubes[i].CubeRelativeCoordinates = TetrisCubeRotate_X(true, Cubes[i].CubeRelativeCoordinates);
+		}
+		break;
+	case ETetrisRotateDir::X_Counterclockwise:
+		for (int i = 0; i < Cubes.Num(); i++)
+		{
+			Cubes[i].CubeRelativeCoordinates = TetrisCubeRotate_X(false, Cubes[i].CubeRelativeCoordinates);
+		}
+		break;
+	case ETetrisRotateDir::Y_Clockwise:
+		for (int i = 0; i < Cubes.Num(); i++)
+		{
+			Cubes[i].CubeRelativeCoordinates = TetrisCubeRotate_Y(true, Cubes[i].CubeRelativeCoordinates);
+		}
+		break;
+	case ETetrisRotateDir::Y_Counterclockwise:
+		for (int i = 0; i < Cubes.Num(); i++)
+		{
+			Cubes[i].CubeRelativeCoordinates = TetrisCubeRotate_Y(false, Cubes[i].CubeRelativeCoordinates);
+		}
+		break;
+	case ETetrisRotateDir::Z_Clockwise:
+		for (int i = 0; i < Cubes.Num(); i++)
+		{
+			Cubes[i].CubeRelativeCoordinates = TetrisCubeRotate_Z(true, Cubes[i].CubeRelativeCoordinates);
+		}
+		break;
+	case ETetrisRotateDir::Z_Counterclockwise:
+		for (int i = 0; i < Cubes.Num(); i++)
+		{
+			Cubes[i].CubeRelativeCoordinates = TetrisCubeRotate_Z(false, Cubes[i].CubeRelativeCoordinates);
+		}
+		break;
+		default:
+			break;
+	}
+
+	// Update world position
+	UpdatePiecesWorldPosition();
+}
+
+FTetrisCoordinate ATetrisPieceBase::TetrisCubeRotate_X(bool isClockwise, FTetrisCoordinate i_OldCoordinate)
+{
+	int cosA = -2;
+	int sinA = -2;
+	if (isClockwise)
+	{
+		cosA = 0;
+		sinA = 1;
+	}
+	else
+	{
+		cosA = 0;
+		sinA = -1;
+	}
+
+	// Calculate
+	FTetrisCoordinate NewCoordinate;
+	NewCoordinate.x = i_OldCoordinate.x;
+	NewCoordinate.y = i_OldCoordinate.y * cosA + i_OldCoordinate.z * sinA;
+	NewCoordinate.z = -(i_OldCoordinate.y * sinA) + i_OldCoordinate.z * cosA;
+
+	return  NewCoordinate;
+}
+
+FTetrisCoordinate ATetrisPieceBase::TetrisCubeRotate_Y(bool isClockwise, FTetrisCoordinate i_OldCoordinate)
+{
+	int cosA = -2;
+	int sinA = -2;
+	if (isClockwise)
+	{
+		cosA = 0;
+		sinA = 1;
+	}
+	else
+	{
+		cosA = 0;
+		sinA = -1;
+	}
+
+	// Calculate
+	FTetrisCoordinate NewCoordinate;
+	NewCoordinate.x = i_OldCoordinate.x * cosA - i_OldCoordinate.z * sinA;
+	NewCoordinate.y = i_OldCoordinate.y;
+	NewCoordinate.z = i_OldCoordinate.x * sinA + i_OldCoordinate.z * cosA;
+
+	return  NewCoordinate;
+}
+
+FTetrisCoordinate ATetrisPieceBase::TetrisCubeRotate_Z(bool isClockwise, FTetrisCoordinate i_OldCoordinate)
+{
+	int cosA = -2;
+	int sinA = -2;
+	if (isClockwise)
+	{
+		cosA = 0;
+		sinA = 1;
+	}
+	else
+	{
+		cosA = 0;
+		sinA = -1;
+	}
+
+	// Calculate
+	FTetrisCoordinate NewCoordinate;
+	NewCoordinate.x = i_OldCoordinate.x * cosA + i_OldCoordinate.y * sinA;
+	NewCoordinate.y = -(i_OldCoordinate.x * sinA) + i_OldCoordinate.y * cosA;
+	NewCoordinate.z = i_OldCoordinate.z;
+
+	return  NewCoordinate;
 }
 

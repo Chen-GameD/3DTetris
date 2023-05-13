@@ -6,15 +6,19 @@
 void ATetrisGameModeBase::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
-
-	
 }
 
 void ATetrisGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (TetrisDataConfig && SpawnTetrisPieceRef)
+	if (!MyController)
+	{
+		// Sign playercontroller
+		MyController = Cast<ATetrisController>(GetWorld()->GetFirstPlayerController());
+	}
+
+	if (TetrisDataConfig && SpawnTetrisPieceRef && MyController)
 	{
 		// Init game area
 		GA_X = TetrisDataConfig->MapSize.x;
@@ -39,5 +43,21 @@ void ATetrisGameModeBase::BeginPlay()
 			CurrentControlledTetrisPiece = NewTetrisPiece;
 			CurrentControlledTetrisPiece->InitPiece(TetrisDataConfig->TetrisShapes[0].CubeConfig, TetrisSpawnCoordinate, TetrisDataConfig->CubeStaticMesh);
 		}
+
+		FTimerHandle TestTimerHandle;
+		GetWorldTimerManager().SetTimer(TestTimerHandle, this, &ATetrisGameModeBase::Timer_AutoUpdatePieceCoordinate, 2.0f, true);
+
+		MyController->SignNewPieceToCurrentControlledPiece(CurrentControlledTetrisPiece);
+		//////////////////////////////// Test //////////////////////////////////
+		
+	}
+}
+
+void ATetrisGameModeBase::Timer_AutoUpdatePieceCoordinate()
+{
+	if (CurrentControlledTetrisPiece)
+	{
+		CurrentControlledTetrisPiece->BaseCoordinate.z--;
+		CurrentControlledTetrisPiece->UpdatePiecesWorldPosition();
 	}
 }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "TetrisController.h"
 #include "TetrisPieceBase.h"
 #include "GameFramework/GameModeBase.h"
 #include "TetrisGameModeBase.generated.h"
@@ -21,6 +22,8 @@ public:
 	virtual void BeginPlay() override;
 
 private:
+	UFUNCTION(BlueprintCallable)
+	void Timer_AutoUpdatePieceCoordinate();
 
 public:
 	// Config table
@@ -45,4 +48,7 @@ private:
 
 	// Spawn piece coordinate
 	FTetrisCoordinate TetrisSpawnCoordinate;
+
+	UPROPERTY()
+	ATetrisController* MyController;
 };
