@@ -1,5 +1,5 @@
 # 3DTetris
-This is a 3D rough version of Tetris, providing some essential configuration files for designers (Piece customization, time timer upgrade customization, map range size customization, and Cube unit customization)  
+This is a 3D rough version of Tetris, providing some essential configuration files for designers (Piece customization, time timer upgrade customization, map range size customization, and Cube unit customization).  
 *Game Engine: Unreal 5.1.1*  
 
 ## Getting started
