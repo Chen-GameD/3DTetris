@@ -147,7 +147,7 @@ void ATetrisGameModeBase::StartGame()
 		/// The piece we want to spawn is in the middle of the top of the entire game, so the coordinate should be (GA_X/2, GA_Y/2, GA_Z)
 		TetrisSpawnCoordinate.x = TetrisDataConfig->MapSize.x / 2;
 		TetrisSpawnCoordinate.y = TetrisDataConfig->MapSize.y / 2;
-		TetrisSpawnCoordinate.z = TetrisDataConfig->MapSize.z;
+		TetrisSpawnCoordinate.z = TetrisDataConfig->MapSize.z - 1;
 
 		// Init Cube Size
 		CubeSize.X = TetrisDataConfig->CubeStaticMesh->GetBounds().BoxExtent.X * 2;
@@ -168,14 +168,28 @@ void ATetrisGameModeBase::StartGame()
 			}
 		}
 
+		// Init Score
+		Score = 0;
+
 		BPF_StartGame();
 
 		SpawnANewPiece();
 		if (TetrisDataConfig->TimerLevel.Num() > 0)
 		{
-			GetWorldTimerManager().SetTimer(AutoUpdateTimerHandle, this, &ATetrisGameModeBase::Timer_AutoUpdatePieceCoordinate, 1.0f, true);
+			CurrentTimerLevel = 0;
 		}
+		else
+		{
+			CurrentTimerLevel = -1;
+		}
+		SetTimerToCurrentLevel();
 	}
+}
+
+void ATetrisGameModeBase::GameOver()
+{
+	MyController->GameOver();
+	BPF_GameOver();
 }
 
 void ATetrisGameModeBase::Timer_AutoUpdatePieceCoordinate()
@@ -186,5 +200,76 @@ void ATetrisGameModeBase::Timer_AutoUpdatePieceCoordinate()
 		{
 			AddCurrentPieceToFillCubes();
 		}
+	}
+}
+
+void ATetrisGameModeBase::SetTimerToCurrentLevel()
+{
+	if (CurrentTimerLevel >= 0)
+	{
+		// Set tick timer
+		if (TetrisDataConfig->TimerLevel.IsValidIndex(CurrentTimerLevel))
+		{
+			GetWorldTimerManager().ClearTimer(AutoUpdateTimerHandle);
+			GetWorldTimerManager().SetTimer(AutoUpdateTimerHandle, this, &ATetrisGameModeBase::Timer_AutoUpdatePieceCoordinate, TetrisDataConfig->TimerLevel[CurrentTimerLevel].TickTime, true);
+			// Set upgrade level timer
+			switch (TetrisDataConfig->TimerLevel[CurrentTimerLevel].UpgradeLevelType)
+			{
+				case ETetrisLevelUpgradeTypeEnum::Time:
+            		if (TetrisDataConfig->TimerLevel[CurrentTimerLevel].KeyValueToTheNewLevel > 0)
+            		{
+            			// Need to set a timer for upgrade level
+            			GetWorldTimerManager().ClearTimer(AutoUpgradeTimerLevelHandle);
+            			GetWorldTimerManager().SetTimer(AutoUpgradeTimerLevelHandle, this, &ATetrisGameModeBase::UpgradeTimerLevel, TetrisDataConfig->TimerLevel[CurrentTimerLevel].KeyValueToTheNewLevel, true);
+            		}
+                    else
+                    {
+                    	// If KeyValueToTheNewLevel <= 0, means it will not increase level anymore
+                    	GetWorldTimerManager().ClearTimer(AutoUpgradeTimerLevelHandle);
+                    }
+            		break;
+            	case ETetrisLevelUpgradeTypeEnum::Score:
+            		if (TetrisDataConfig->TimerLevel[CurrentTimerLevel].KeyValueToTheNewLevel > 0)
+            		{
+            			// Need to set a timer for upgrade level
+            			GetWorldTimerManager().ClearTimer(AutoUpgradeTimerLevelHandle);
+            			GetWorldTimerManager().SetTimer(AutoUpgradeTimerLevelHandle, this, &ATetrisGameModeBase::CheckIfScoreMeetTheUpgradeRequire, 2.0f, true);
+            		}
+            		else
+            		{
+            			// If KeyValueToTheNewLevel <= 0, means it will not increase level anymore
+            			GetWorldTimerManager().ClearTimer(AutoUpgradeTimerLevelHandle);
+            		}
+            		break;
+            	default:
+            		break;
+			}
+		}
+		else
+		{
+			// If the index is not valid, need to keep game running,
+			// Normally we need to output a log message to notice the designer here has a potential problem.
+			GetWorldTimerManager().ClearTimer(AutoUpgradeTimerLevelHandle);
+		}
+	}
+	else
+	{
+		// Set the InRate to a default value
+		GetWorldTimerManager().SetTimer(AutoUpdateTimerHandle, this, &ATetrisGameModeBase::Timer_AutoUpdatePieceCoordinate, 1.0f, true);
+	}
+}
+
+void ATetrisGameModeBase::UpgradeTimerLevel()
+{
+	CurrentTimerLevel++;
+	SetTimerToCurrentLevel();
+}
+
+void ATetrisGameModeBase::CheckIfScoreMeetTheUpgradeRequire()
+{
+	if (Score >= TetrisDataConfig->TimerLevel[CurrentTimerLevel].KeyValueToTheNewLevel)
+	{
+		// Need to upgrade
+		UpgradeTimerLevel();
 	}
 }

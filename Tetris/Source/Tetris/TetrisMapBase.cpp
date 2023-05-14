@@ -3,6 +3,7 @@
 
 #include "TetrisMapBase.h"
 
+#include "TetrisGameModeBase.h"
 #include "TetrisPieceBase.h"
 
 // Sets default values
@@ -243,6 +244,14 @@ void ATetrisMapBase::EliminateCubes(int i_TheLayerNeedToEliminate)
 			cubeNumInCurrentLayer++;
 			FillState[FillCubes[i]->CubeWorldCoordinate.z] = cubeNumInCurrentLayer;
 		}
+	}
+
+	// Update Score
+	ATetrisGameModeBase* MyGameMode = Cast<ATetrisGameModeBase>(GetWorld()->GetAuthGameMode());
+	if (MyGameMode)
+	{
+		MyGameMode->Score++;
+		MyGameMode->BPF_UpdateScore();
 	}
 
 	// Recheck

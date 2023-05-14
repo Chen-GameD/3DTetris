@@ -66,6 +66,16 @@ void ATetrisPieceBase::InitPiece(TArray<FTetrisCoordinate> i_PiecesCoordinates, 
 
 		// When finished Init, should update all pieces world position once
 		UpdatePiecesWorldPosition();
+
+		// Check if this meet game over
+		if (!CheckIfCanMoveOrRotate())
+		{
+			ATetrisGameModeBase* MyGameMode = Cast<ATetrisGameModeBase>(GetWorld()->GetAuthGameMode());
+			if (MyGameMode)
+			{
+				MyGameMode->GameOver();
+			}
+		}
 	}
 	else
 	{

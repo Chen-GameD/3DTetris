@@ -34,9 +34,17 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void StartGame();
+	UFUNCTION(BlueprintCallable)
+	void GameOver();
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void BPF_GameOver();
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void BPF_StartGame();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void BPF_UpdateScore();
 
 private:
 	UFUNCTION(BlueprintCallable)
@@ -44,6 +52,12 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 	void SetTimerToCurrentLevel();
+
+	UFUNCTION(BlueprintCallable)
+	void UpgradeTimerLevel();
+
+	UFUNCTION(BlueprintCallable)
+	void CheckIfScoreMeetTheUpgradeRequire();
 
 public:
 	// Config table
@@ -55,6 +69,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TSubclassOf<ATetrisMapBase> MapRef;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int Score;
 
 	// Map coordinate fill state
 	//TArray<FCubeStruct> FillCubes;
@@ -85,5 +102,8 @@ private:
 	ATetrisController* MyController;
 
 	FTimerHandle AutoUpdateTimerHandle;
+	FTimerHandle AutoUpgradeTimerLevelHandle;
 	bool IsSpawn = false;
+
+	int CurrentTimerLevel;
 };

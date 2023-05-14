@@ -10,6 +10,9 @@
  * 
  */
 
+UENUM()
+enum ETetrisLevelUpgradeTypeEnum { Time, Score };
+
 USTRUCT(BlueprintType)
 struct FTimerStruct
 {
@@ -18,7 +21,9 @@ struct FTimerStruct
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Timer")
 	float TickTime;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Timer")
-	float TimeToTheNewLevel;
+	TEnumAsByte<ETetrisLevelUpgradeTypeEnum> UpgradeLevelType;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Timer")
+	float KeyValueToTheNewLevel;
 };
 
 USTRUCT(BlueprintType)
@@ -78,5 +83,6 @@ public:
 	TArray<FTetrisPieceShape> TetrisShapes;
 
 	// Timer Level
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Tetris Pieces Config")
 	TArray<FTimerStruct> TimerLevel;
 };

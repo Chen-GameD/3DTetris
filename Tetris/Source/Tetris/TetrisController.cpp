@@ -18,12 +18,20 @@ void ATetrisController::StartGame()
 	DefaultMouseCursor = EMouseCursor::Default;
 }
 
+void ATetrisController::GameOver()
+{
+	// Set input mode
+	FInputModeUIOnly inputMode;
+	inputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	this->SetInputMode(inputMode);
+	this->SetShowMouseCursor(true);
+}
+
 void ATetrisController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	// Set input mode
-	//FInputModeUIOnly inputMode;
 	FInputModeUIOnly inputMode;
 	inputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	this->SetInputMode(inputMode);
