@@ -28,11 +28,26 @@ void ACubeBase::Tick(float DeltaTime)
 
 }
 
-void ACubeBase::InitCube(UStaticMesh* i_CubeMesh)
+void ACubeBase::InitCube(UStaticMesh* i_CubeMesh, AActor* i_ParentPiece)
 {
-	if (i_CubeMesh)
+	if (i_CubeMesh && i_ParentPiece)
 	{
 		CubeMeshComponent->SetStaticMesh(i_CubeMesh);
+
+		// Init CubeStaticMeshRef's length, width and height;
+		CubeRef_X = i_CubeMesh->GetBounds().BoxExtent.X * 2;
+		CubeRef_Y = i_CubeMesh->GetBounds().BoxExtent.Y * 2;
+		CubeRef_Z = i_CubeMesh->GetBounds().BoxExtent.Z * 2;
+
+		// Set the parent piece
+		ParentPiece = i_ParentPiece;
 	}
+}
+
+void ACubeBase::UpdateCubePosition()
+{
+	// Calculate the real world location
+	FVector CurrentCubeWorldLocation = FVector(CubeWorldCoordinate.x * CubeRef_X, CubeWorldCoordinate.y * CubeRef_Y, CubeWorldCoordinate.z * CubeRef_Z);
+	this->SetActorLocation(CurrentCubeWorldLocation);
 }
 

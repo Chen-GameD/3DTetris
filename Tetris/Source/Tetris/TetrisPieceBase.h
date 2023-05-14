@@ -47,11 +47,17 @@ public:
 
 	// Move function
 	UFUNCTION(BlueprintCallable)
-	void TetrisMove(ETetrisMoveDir n_Dir);
-
+	bool TetrisMove(ETetrisMoveDir n_Dir);
 	// Rotate function
 	UFUNCTION(BlueprintCallable)
 	void TetrisRotate(ETetrisRotateDir n_Rot);
+	// Check if can move or rotate
+	UFUNCTION(BlueprintCallable)
+	bool CheckIfCanMoveOrRotate();
+
+	// Eliminate cube
+	UFUNCTION(BlueprintCallable)
+	void EliminateACubeFromThisPiece();
 
 protected:
 	// Called when the game starts or when spawned
@@ -84,11 +90,6 @@ private:
 	UPROPERTY()
 	bool IsFinishedInit = false;
 
-	// CubeStaticMeshRef's length, width and height;
 	UPROPERTY()
-	float CubeRef_X;
-	UPROPERTY()
-	float CubeRef_Y;
-	UPROPERTY()
-	float CubeRef_Z;
+	int CubeNumber = 0;
 };

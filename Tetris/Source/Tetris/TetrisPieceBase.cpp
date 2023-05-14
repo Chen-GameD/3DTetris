@@ -3,6 +3,8 @@
 
 #include "TetrisPieceBase.h"
 
+#include "TetrisGameModeBase.h"
+
 // Sets default values
 ATetrisPieceBase::ATetrisPieceBase()
 {
@@ -33,16 +35,17 @@ void ATetrisPieceBase::InitPiece(TArray<FTetrisCoordinate> i_PiecesCoordinates, 
 	if (i_PiecesCoordinates.Num() > 0 && i_CubeMesh)
 	{
 		// Init CubeStaticMeshRef's length, width and height;
-		CubeRef_X = i_CubeMesh->GetBounds().BoxExtent.X * 2;
-		CubeRef_Y = i_CubeMesh->GetBounds().BoxExtent.Y * 2;
-		CubeRef_Z = i_CubeMesh->GetBounds().BoxExtent.Z * 2;
+		// CubeRef_X = i_CubeMesh->GetBounds().BoxExtent.X * 2;
+		// CubeRef_Y = i_CubeMesh->GetBounds().BoxExtent.Y * 2;
+		// CubeRef_Z = i_CubeMesh->GetBounds().BoxExtent.Z * 2;
 
 		// Init all pieces
+		CubeNumber = i_PiecesCoordinates.Num();
 		for (int i = 0; i < i_PiecesCoordinates.Num(); i++)
 		{
 			// New a cube and attach to RootMesh component
 			ACubeBase* NewCube = GetWorld()->SpawnActor<ACubeBase>(ACubeBase::StaticClass(), FVector(0, 0, 0), FRotator::ZeroRotator);
-			NewCube->InitCube(i_CubeMesh);
+			NewCube->InitCube(i_CubeMesh, this);
 			NewCube->AttachToComponent(RootMesh, FAttachmentTransformRules::SnapToTargetIncludingScale);
 
 			// Calculate relative coordinate of this cube
@@ -78,22 +81,25 @@ void ATetrisPieceBase::UpdatePiecesWorldPosition()
 		for (int i = 0; i < Cubes.Num(); i++)
 		{
 			// Cubes[i]'s world coordinate = BaseCoordinate + Cubes[i].CubeCoordinates
-			FTetrisCoordinate CurrentCubeWorldCoordinate;
-			CurrentCubeWorldCoordinate.x = BaseCoordinate.x + Cubes[i].CubeRelativeCoordinates.x;
-			CurrentCubeWorldCoordinate.y = BaseCoordinate.y + Cubes[i].CubeRelativeCoordinates.y;
-			CurrentCubeWorldCoordinate.z = BaseCoordinate.z + Cubes[i].CubeRelativeCoordinates.z;
+			// FTetrisCoordinate CurrentCubeWorldCoordinate;
+			// CurrentCubeWorldCoordinate.x = BaseCoordinate.x + Cubes[i].CubeRelativeCoordinates.x;
+			// CurrentCubeWorldCoordinate.y = BaseCoordinate.y + Cubes[i].CubeRelativeCoordinates.y;
+			// CurrentCubeWorldCoordinate.z = BaseCoordinate.z + Cubes[i].CubeRelativeCoordinates.z;
 			
-			Cubes[i].Cube->CubeWorldCoordinate = CurrentCubeWorldCoordinate;
+			Cubes[i].Cube->CubeWorldCoordinate = BaseCoordinate + Cubes[i].CubeRelativeCoordinates;
+			Cubes[i].Cube->UpdateCubePosition();
 
 			// Calculate the real world location
-			FVector CurrentCubeWorldLocation = FVector(CurrentCubeWorldCoordinate.x * CubeRef_X, CurrentCubeWorldCoordinate.y * CubeRef_Y, CurrentCubeWorldCoordinate.z * CubeRef_Z);
-			Cubes[i].Cube->SetActorLocation(CurrentCubeWorldLocation);
+			// FVector CurrentCubeWorldLocation = FVector(CurrentCubeWorldCoordinate.x * CubeRef_X, CurrentCubeWorldCoordinate.y * CubeRef_Y, CurrentCubeWorldCoordinate.z * CubeRef_Z);
+			// Cubes[i].Cube->SetActorLocation(CurrentCubeWorldLocation);
 		}
 	}
 }
 
-void ATetrisPieceBase::TetrisMove(ETetrisMoveDir n_Dir)
+bool ATetrisPieceBase::TetrisMove(ETetrisMoveDir n_Dir)
 {
+	bool retValue = true;
+	FTetrisCoordinate oldCoordinate = BaseCoordinate;
 	switch (n_Dir)
 	{
 	case ETetrisMoveDir::X_Forward:
@@ -115,8 +121,17 @@ void ATetrisPieceBase::TetrisMove(ETetrisMoveDir n_Dir)
 			break;
 	}
 
+	// If cannot move, restore the BaseCoordinate
+	if (!CheckIfCanMoveOrRotate())
+	{
+		BaseCoordinate = oldCoordinate;
+		retValue = false;
+	}
+
 	// Update world position
 	UpdatePiecesWorldPosition();
+
+	return retValue;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -140,6 +155,7 @@ void ATetrisPieceBase::TetrisMove(ETetrisMoveDir n_Dir)
 /////////////////////////////////////////////////////////////////////////////////////
 void ATetrisPieceBase::TetrisRotate(ETetrisRotateDir n_Rot)
 {
+	TArray<FCubeStruct> oldCubes = Cubes;
 	switch (n_Rot)
 	{
 	case ETetrisRotateDir::X_Clockwise:
@@ -182,8 +198,43 @@ void ATetrisPieceBase::TetrisRotate(ETetrisRotateDir n_Rot)
 			break;
 	}
 
+	// If cannot rotate, restore the previous value
+	if (!CheckIfCanMoveOrRotate())
+	{
+		Cubes = oldCubes;
+	}
+
 	// Update world position
 	UpdatePiecesWorldPosition();
+}
+
+bool ATetrisPieceBase::CheckIfCanMoveOrRotate()
+{
+	bool retValue = true;
+
+	ATetrisGameModeBase* MyGameMode = Cast<ATetrisGameModeBase>(GetWorld()->GetAuthGameMode());
+	if (MyGameMode)
+	{
+		for (int i = 0; i < Cubes.Num(); i++)
+		{
+			if (!MyGameMode->CheckIfCubePositionIsValid(BaseCoordinate + Cubes[i].CubeRelativeCoordinates))
+			{
+				retValue = false;
+				break;
+			}
+		}
+	}
+	
+	return  retValue;
+}
+
+void ATetrisPieceBase::EliminateACubeFromThisPiece()
+{
+	CubeNumber--;
+	if (CubeNumber <= 0)
+	{
+		this->Destroy();
+	}
 }
 
 FTetrisCoordinate ATetrisPieceBase::TetrisCubeRotate_X(bool isClockwise, FTetrisCoordinate i_OldCoordinate)

@@ -21,7 +21,11 @@ public:
 
 	// Init
 	UFUNCTION(BlueprintCallable)
-	void InitCube(UStaticMesh* i_CubeMesh);
+	void InitCube(UStaticMesh* i_CubeMesh, AActor* i_ParentPiece);
+
+	// Update position
+	UFUNCTION(BlueprintCallable)
+	void UpdateCubePosition();
 	
 protected:
 	// Called when the game starts or when spawned
@@ -33,5 +37,17 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* CubeMeshComponent;
+
+	UPROPERTY(BlueprintReadOnly)
+	AActor* ParentPiece;
+
+private:
+	// CubeStaticMeshRef's length, width and height;
+	UPROPERTY()
+	float CubeRef_X;
+	UPROPERTY()
+	float CubeRef_Y;
+	UPROPERTY()
+	float CubeRef_Z;
 
 };

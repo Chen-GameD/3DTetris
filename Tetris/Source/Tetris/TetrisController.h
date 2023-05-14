@@ -19,6 +19,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SignNewPieceToCurrentControlledPiece(ATetrisPieceBase* n_ControlledPiece);
 
+	UFUNCTION(BlueprintCallable)
+	void StartGame();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

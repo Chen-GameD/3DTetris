@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "TetrisController.h"
+#include "TetrisMapBase.h"
 #include "TetrisPieceBase.h"
 #include "GameFramework/GameModeBase.h"
 #include "TetrisGameModeBase.generated.h"
@@ -21,9 +22,28 @@ public:
 
 	virtual void BeginPlay() override;
 
+	// Spawn a new Tetris Piece
+	UFUNCTION(BlueprintCallable)
+	void SpawnANewPiece();
+
+	UFUNCTION(BlueprintCallable)
+	void AddCurrentPieceToFillCubes();
+
+	UFUNCTION(BlueprintCallable)
+	bool CheckIfCubePositionIsValid(FTetrisCoordinate i_CheckCubeCoordinate);
+
+	UFUNCTION(BlueprintCallable)
+	void StartGame();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void BPF_StartGame();
+
 private:
 	UFUNCTION(BlueprintCallable)
 	void Timer_AutoUpdatePieceCoordinate();
+
+	UFUNCTION(BlueprintCallable)
+	void SetTimerToCurrentLevel();
 
 public:
 	// Config table
@@ -33,14 +53,26 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TSubclassOf<ATetrisPieceBase> SpawnTetrisPieceRef;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TSubclassOf<ATetrisMapBase> MapRef;
+
+	// Map coordinate fill state
+	//TArray<FCubeStruct> FillCubes;
+
 private:
 	// Game area
+	// UPROPERTY()
+	// int GA_X = 10;
+	// UPROPERTY()
+	// int GA_Y = 10;
+	// UPROPERTY()
+	// int GA_Z = 20;
 	UPROPERTY()
-	int GA_X = 10;
+	ATetrisMapBase* GameMap;
+
+	// Tetris Cube Size
 	UPROPERTY()
-	int GA_Y = 10;
-	UPROPERTY()
-	int GA_Z = 20;
+	FVector CubeSize;
 
 	// Current controlled tetris piece
 	UPROPERTY()
@@ -51,4 +83,7 @@ private:
 
 	UPROPERTY()
 	ATetrisController* MyController;
+
+	FTimerHandle AutoUpdateTimerHandle;
+	bool IsSpawn = false;
 };

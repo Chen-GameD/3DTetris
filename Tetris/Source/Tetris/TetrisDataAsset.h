@@ -11,6 +11,17 @@
  */
 
 USTRUCT(BlueprintType)
+struct FTimerStruct
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Timer")
+	float TickTime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Timer")
+	float TimeToTheNewLevel;
+};
+
+USTRUCT(BlueprintType)
 struct FTetrisCoordinate
 {
 	GENERATED_BODY()
@@ -21,6 +32,22 @@ struct FTetrisCoordinate
 	int y;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Coordinate")
 	int z;
+
+	// Override the == operator
+	bool operator==(const FTetrisCoordinate& Other) const
+	{
+		return x == Other.x && y == Other.y && z == Other.z;
+	}
+
+	// Override the + operator
+	FTetrisCoordinate operator+(const FTetrisCoordinate& Other) const
+	{
+		FTetrisCoordinate Result;
+		Result.x = x + Other.x;
+		Result.y = y + Other.y;
+		Result.z = z + Other.z;
+		return Result;
+	}
 };
 
 USTRUCT(BlueprintType)
@@ -49,4 +76,7 @@ public:
 	// Tetris pieces config
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Tetris Pieces Config")
 	TArray<FTetrisPieceShape> TetrisShapes;
+
+	// Timer Level
+	TArray<FTimerStruct> TimerLevel;
 };

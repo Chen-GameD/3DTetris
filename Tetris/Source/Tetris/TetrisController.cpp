@@ -5,15 +5,29 @@
 
 void ATetrisController::SignNewPieceToCurrentControlledPiece(ATetrisPieceBase* n_ControlledPiece)
 {
-	if (n_ControlledPiece)
-	{
-		CurrentControlledPiece = n_ControlledPiece;
-	}
+	CurrentControlledPiece = n_ControlledPiece;
+}
+
+void ATetrisController::StartGame()
+{
+	// Set the input mode
+	FInputModeGameOnly inputMode;
+	inputMode.SetConsumeCaptureMouseDown(false);
+	SetInputMode(inputMode);
+	bShowMouseCursor = false;
+	DefaultMouseCursor = EMouseCursor::Default;
 }
 
 void ATetrisController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Set input mode
+	//FInputModeUIOnly inputMode;
+	FInputModeUIOnly inputMode;
+	inputMode.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	this->SetInputMode(inputMode);
+	this->SetShowMouseCursor(true);
 }
 
 void ATetrisController::PlayerTick(float DeltaTime)
